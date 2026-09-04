@@ -1,8 +1,8 @@
-# JL Audio Standing Development Agreement
+# JL Aspect Works Standing Development Agreement
 
-This document defines the standing development workflow for JL Audio software projects.
+This document defines the standing development workflow for JL Aspect Works software projects.
 
-It applies across JL Audio repositories unless a repository contains an explicitly documented project-specific exception. Technical implementation should also follow the [JL Audio Coding Standards](CODING_STANDARDS.md).
+It applies across JL Aspect Works repositories unless a repository contains an explicitly documented project-specific exception. Technical implementation should also follow the [JL Aspect Works Coding Standards](CODING_STANDARDS.md).
 
 The purpose of this agreement is to make development predictable, auditable, efficient, and easy to resume across development sessions.
 
@@ -160,7 +160,7 @@ Where an issue can be completely verified through automated testing and does not
 
 Automated verification is part of implementation, not a separate afterthought.
 
-Follow the JL Audio Coding Standards for test quality and project-specific validation requirements.
+Follow the JL Aspect Works Coding Standards for test quality and project-specific validation requirements.
 
 Before a pull request is considered ready:
 
