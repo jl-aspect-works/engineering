@@ -2,7 +2,7 @@
 
 - **Status:** Proposed
 - **Date:** 2026-07-26
-- **Decision owners:** JL Audio maintainers
+- **Decision owners:** JL Aspect Works maintainers
 
 ## Context
 

@@ -1,12 +1,12 @@
-# JL Audio Coding Standards
+# JL Aspect Works Coding Standards
 
-These standards define the default engineering expectations for JL Audio software projects.
+These standards define the default engineering expectations for JL Aspect Works software projects.
 
 They are intended to keep the codebase readable, maintainable, testable, and approachable for contributors while avoiding unnecessary ceremony. Individual repositories may add stricter project-specific rules, but should not silently weaken these standards without a documented reason.
 
 ## 1. Core principles
 
-JL Audio code should favor:
+JL Aspect Works code should favor:
 
 - clarity over cleverness;
 - small, cohesive modules over large multipurpose files;
@@ -78,7 +78,7 @@ Names should describe domain intent rather than implementation mechanics.
 
 - Use nouns for data types and values.
 - Use verbs or verb phrases for operations.
-- Prefer domain terminology already used by JL Audio products and APIs.
+- Prefer domain terminology already used by JL Aspect Works products and APIs.
 - Avoid unexplained abbreviations.
 - Avoid names such as `data`, `temp`, `thing`, `handler`, or `manager` when a more specific name is available.
 - Boolean names should read naturally as true/false statements where possible.
@@ -157,7 +157,7 @@ When an operation may have completed but confirmation failed, report the result 
 
 Public interfaces, serialized data, schemas, CLI behavior, and inter-product APIs are contracts.
 
-Changes to those contracts require explicit compatibility consideration and should follow the JL Audio versioning and architecture decisions documented in the engineering repository.
+Changes to those contracts require explicit compatibility consideration and should follow the JL Aspect Works versioning and architecture decisions documented in the engineering repository.
 
 Structural refactors should not change externally observable behavior unless that behavior change is part of the approved scope.
 
@@ -198,7 +198,7 @@ Repositories should use the standard formatter and linter for their language/too
 
 Warnings that indicate code quality or correctness issues should be treated as build failures in CI where the toolchain supports that policy.
 
-For Rust projects, the default JL Audio expectation is:
+For Rust projects, the default JL Aspect Works expectation is:
 
 - `cargo fmt --check`;
 - `cargo clippy --all-targets --all-features -- -D warnings`;
@@ -247,7 +247,7 @@ Security-sensitive code should prefer well-established libraries and platform fa
 
 ## 17. Git and pull-request workflow
 
-JL Audio repositories should use protected development practices:
+JL Aspect Works repositories should use protected development practices:
 
 - do not make normal development changes directly on `main`;
 - use focused branches and pull requests;
