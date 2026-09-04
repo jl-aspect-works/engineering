@@ -1,4 +1,4 @@
-# JL Audio Ecosystem Roadmap
+# JL Aspect Works Ecosystem Roadmap
 
 **Status:** Proposed for review  
 **Scope:** JL Mixing Automation and JL Mixing Studio
