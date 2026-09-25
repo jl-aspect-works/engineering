@@ -36,12 +36,14 @@ Normal development flow is:
 4. Run appropriate local validation where available.
 5. Push the branch.
 6. Open a pull request against `main`.
-7. Allow CI to complete.
+7. Monitor the required CI checks to completion.
 8. Review and resolve failures or review comments.
 9. Obtain user approval when required by the high-level issue workflow in Section 5.
 10. Merge through the repository's normal merge process.
 
 Keep pull requests reasonably focused. Avoid combining unrelated cleanup or refactoring with feature work unless explicitly approved.
+
+Batch related documentation corrections and release-status updates into a single focused pull request at a meaningful milestone when practical. Do not delay documentation needed for acceptance or release merely to batch it. Use the issue or pull request for interim progress, then update the durable record when the result is established.
 
 ## 3. Scope and decision control
 
@@ -154,6 +156,8 @@ This keeps development focused and prevents a backlog of partially completed or 
 
 User approval is not required for every internal code edit. Approval applies to the completed high-level issue or to material design decisions identified during its implementation.
 
+Routine documentation corrections and internal fixes within the approved scope do not create additional approval gates. A release has its own final approval decision. Return to the user for a decision when behavior, scope, compatibility, or release qualification materially changes.
+
 Where an issue can be completely verified through automated testing and does not require meaningful user acceptance, it may be completed without a separate manual test cycle when that is consistent with the project's established verification policy.
 
 ## 6. Testing and CI
@@ -170,11 +174,19 @@ Before a pull request is considered ready:
 - avoid changing tests simply to make an incorrect implementation pass;
 - investigate warnings or failures rather than assuming they are unrelated.
 
+### CI scope for documentation-only changes
+
+Repositories should provide a fast, required documentation check for pull requests and `main` pushes whose entire change is documentation. Check relevant formatting, links, and release-record consistency. Such changes do not require the full application build and cross-platform test matrix solely because CI was triggered.
+
+Use an always-present required check that succeeds only when the checks appropriate to the change have passed, including when expensive jobs are intentionally skipped. Do not skip an entire required workflow by path if that would leave branch protection waiting for a check that never runs.
+
+Any change to application code, tests, dependencies, version or build inputs, or CI/workflow configuration requires the appropriate full CI. A mixed change or uncertain classification defaults to full CI. Release and acceptance records still require accurate content and the applicable user verification and release approvals. A previously approved code commit must have its required full CI before release; a documentation-only change does not substitute for that verification.
+
 ### CI completion rule
 
-When development work triggers CI, do not treat the work as complete merely because the build was started.
+When development work triggers required CI, do not treat the work as complete merely because the run was started. The assistant owns monitoring relevant CI while actively handling a change: check through a terminal result, investigate failures, and take the next authorized step when the required checks pass. The user should not need to report that CI completed or failed.
 
-Poll/check CI until the relevant run reaches a meaningful terminal state or until further progress requires user action.
+Use a sensible polling interval and communicate meaningful status changes, decisions, or delays rather than each poll. Independent preparation may continue while CI is running, but pending required checks do not count as passed and must pass before the associated merge, acceptance, or release gate. If the assistant must end active work while a required check is still pending, explicitly hand off the run and the remaining action; do not imply monitoring will continue after the turn without an active automation.
 
 If CI fails:
 
@@ -268,6 +280,8 @@ The status document should summarize current state rather than become a chronolo
 
 GitHub issues, PRs, and history remain the detailed record.
 
+Record interim progress in the relevant issue or PR rather than repeatedly updating the durable status document for every CI or verification checkpoint. Keep the durable record current at meaningful milestones and whenever it is needed for a decision.
+
 ## 11. Development chat/thread management
 
 Development conversations are temporary working context and should not be allowed to grow indefinitely when most of their contents are no longer relevant.
@@ -349,6 +363,12 @@ Prefer:
 - focused CI reruns over rerunning successful jobs;
 - concise current-state documentation over chronological transcripts;
 - references to locked decisions over repeatedly restating detailed design rationale.
+
+Start each issue with a concise brief and the current authoritative repository state. Read the affected files and run focused local validation before starting another CI cycle. Give development updates when a finding, blocker, verification result, or decision changes, without generating a separate message for every routine tool check.
+
+Match the model and reasoning effort to the work when model selection is available: use lighter models or effort for bounded documentation, status, and straightforward maintenance; a capable coding model for normal implementation; and deeper reasoning for difficult design, failure analysis, or consequential release decisions. Escalate if uncertainty or rework shows the initial choice was insufficient. Judge efficiency by completed work and rework as well as token usage.
+
+For the next five high-level issues after adopting these changes, keep a lightweight record of CI runs and minutes, elapsed time, interaction turns, and defects or rework found after acceptance. Review whether the changes improve efficiency without weakening verification or visibility, then adjust the process if needed.
 
 Efficiency must not override correctness, required verification, or user approval.
 
