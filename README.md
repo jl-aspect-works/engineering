@@ -8,3 +8,4 @@ Shared architecture, compatibility, roadmap, coding standards, and development p
 - [JL Aspect Works Development Agreement](docs/DEVELOPMENT_AGREEMENT.md)
 - [JL Aspect Works Ecosystem Roadmap](docs/ECOSYSTEM_ROADMAP.md)
 - [ADR-0001: Independent product and contract versioning](docs/adr/0001-independent-product-and-contract-versioning.md)
+- [GitHub Governance and Security Verification](docs/GITHUB_GOVERNANCE.md)
