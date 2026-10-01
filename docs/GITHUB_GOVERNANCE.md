@@ -39,7 +39,11 @@ Apply the same available baseline manually when onboarding new repositories. Rec
 
 ## Release defense in depth
 
-Both published `v2.3.3` releases reported `immutable: false` during the audit. Protected tags and the #14 create-only release guards are verified. Native server-side release immutability remains a separate review, outside completion of #16–18. No native locking change or retroactive protection is claimed. Do not replace artifacts or move tags to retrofit protection; corrections require a new version/tag.
+The owner enabled repository release immutability for Studio and Automation on 2026-09-30. This administrator setting is owner-confirmed; the App connection cannot independently query it. GitHub applies the setting only to future releases. API read-back after enablement confirms both existing `v2.3.3` releases still report `immutable: false`; they were not republished or modified.
+
+Both current release workflows pass all assets to `gh release create`. The [GitHub CLI manual](https://cli.github.com/manual/gh_release_create) documents that this creates a draft, uploads assets, then publishes; no workflow adjustment is required for native immutability. Protected tags, create-only version guards, checksum validation and artifact provenance remain in place.
+
+At the next approved RC/stable publication, verify the new release reports `immutable: true`, along with the existing asset/checksum/provenance checks. This is a future release acceptance check, not a reason to create a test release or change a published tag. Corrections continue to require a new version/tag.
 
 ## Completion and implementation references
 
