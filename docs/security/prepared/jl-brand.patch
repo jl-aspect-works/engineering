@@ -1,0 +1,209 @@
+diff --git a/.github/scripts/check-repository.py b/.github/scripts/check-repository.py
+new file mode 100644
+index 0000000..6ca4ae2
+--- /dev/null
++++ b/.github/scripts/check-repository.py
+@@ -0,0 +1,92 @@
++#!/usr/bin/env python3
++"""Validate repository assets, local Markdown links, and immutable Action pins."""
++
++from pathlib import Path
++import re
++import struct
++import subprocess
++import sys
++from urllib.parse import unquote, urlsplit
++import xml.etree.ElementTree as ET
++import zlib
++
++
++def check_png(data):
++    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
++        raise ValueError("invalid PNG signature")
++    offset, chunks = 8, []
++    while offset < len(data):
++        if offset + 12 > len(data):
++            raise ValueError("truncated PNG chunk")
++        size = struct.unpack(">I", data[offset:offset + 4])[0]
++        kind = data[offset + 4:offset + 8]
++        end = offset + 12 + size
++        if end > len(data):
++            raise ValueError("truncated PNG data")
++        payload = data[offset + 8:offset + 8 + size]
++        checksum = struct.unpack(">I", data[end - 4:end])[0]
++        if zlib.crc32(kind + payload) & 0xffffffff != checksum:
++            raise ValueError("PNG checksum mismatch")
++        if not chunks:
++            if kind != b"IHDR" or size != 13:
++                raise ValueError("missing PNG header")
++            width, height = struct.unpack(">II", payload[:8])
++            if width == 0 or height == 0:
++                raise ValueError("empty PNG dimensions")
++        chunks.append(kind)
++        offset = end
++        if kind == b"IEND":
++            if size != 0 or offset != len(data):
++                raise ValueError("invalid PNG end")
++            break
++    if not chunks or chunks[-1] != b"IEND" or b"IDAT" not in chunks:
++        raise ValueError("incomplete PNG")
++
++
++def check_markdown(path, content):
++    for destination in re.findall(r"\]\(([^)\n]+)\)", content):
++        destination = destination.split(" ", 1)[0].strip("<>")
++        url = urlsplit(destination)
++        if url.scheme or url.netloc or destination.startswith(("/", "#")):
++            continue
++        if url.path and not (path.parent / unquote(url.path)).exists():
++            raise ValueError(f"missing local link: {destination}")
++
++
++def check_actions(content):
++    for action in re.findall(r"uses:\s*([^\s]+)", content):
++        if not action.startswith("./") and not re.fullmatch(r"[^@]+@[0-9a-f]{40}", action):
++            raise ValueError(f"Action must use immutable SHA: {action}")
++
++
++def check_file(path):
++    if path.suffix.lower() == ".png":
++        check_png(path.read_bytes())
++    elif path.suffix.lower() == ".svg":
++        content = path.read_text(encoding="utf-8")
++        if "<!DOCTYPE" in content or "<!ENTITY" in content:
++            raise ValueError("SVG document declarations are not allowed")
++        if ET.fromstring(content).tag.split("}")[-1] != "svg":
++            raise ValueError("invalid SVG root")
++    elif path.suffix.lower() == ".md":
++        check_markdown(path, path.read_text(encoding="utf-8"))
++    elif path.parent == Path(".github/workflows") and path.suffix in (".yml", ".yaml"):
++        check_actions(path.read_text(encoding="utf-8"))
++
++
++def main():
++    paths = subprocess.check_output(
++        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
++    ).decode().split("\0")
++    for name in sorted(set(paths) - {""}):
++        try:
++            check_file(Path(name))
++        except (OSError, UnicodeError, ValueError, ET.ParseError) as error:
++            print(f"{name}: {error}", file=sys.stderr)
++            return 1
++    print("Repository asset, documentation, and Action-pin checks passed")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/.github/scripts/test_repository_checks.py b/.github/scripts/test_repository_checks.py
+new file mode 100644
+index 0000000..0d746ed
+--- /dev/null
++++ b/.github/scripts/test_repository_checks.py
+@@ -0,0 +1,44 @@
++#!/usr/bin/env python3
++"""Negative checks for corrupt assets, broken links, and mutable Action references."""
++import importlib.util
++from pathlib import Path
++import struct
++import tempfile
++import unittest
++import zlib
++
++spec = importlib.util.spec_from_file_location("checks", Path(__file__).with_name("check-repository.py"))
++checks = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(checks)
++
++
++def chunk(kind, data):
++    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
++
++
++class ChecksTests(unittest.TestCase):
++    def test_valid_png_and_corrupt_or_truncated_png(self):
++        png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
++        png += chunk(b"IDAT", zlib.compress(b"\0\0\0\0")) + chunk(b"IEND", b"")
++        checks.check_png(png)
++        for bad in (b"not png", png[:-1], png[:-12], png + b"trailing", png[:30] + b"x" + png[31:]):
++            with self.subTest(data=bad), self.assertRaises(ValueError):
++                checks.check_png(bad)
++
++    def test_local_links_require_existing_files(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            (root / "target.md").write_text("target")
++            checks.check_markdown(root / "README.md", "[valid](target.md#section) [external](https://example.com) [anchor](#section)")
++            with self.assertRaises(ValueError):
++                checks.check_markdown(root / "README.md", "[missing](missing.md)")
++
++    def test_external_actions_require_full_shas(self):
++        checks.check_actions("uses: actions/checkout@" + "a" * 40 + "\nuses: ./local-action")
++        for reference in ("actions/checkout@v7", "actions/checkout@abc123", "actions/checkout@main"):
++            with self.subTest(reference=reference), self.assertRaises(ValueError):
++                checks.check_actions("uses: " + reference)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/.github/workflows/repository-checks.yml b/.github/workflows/repository-checks.yml
+new file mode 100644
+index 0000000..4592748
+--- /dev/null
++++ b/.github/workflows/repository-checks.yml
+@@ -0,0 +1,21 @@
++name: Repository checks
++
++on:
++  pull_request:
++    branches: [main]
++  push:
++    branches: [main]
++
++permissions:
++  contents: read
++
++jobs:
++  checks:
++    name: Required repository checks
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++      - name: Verify checker failure paths
++        run: python3 .github/scripts/test_repository_checks.py
++      - name: Check assets, documentation, and Action pins
++        run: python3 .github/scripts/check-repository.py
+diff --git a/README.md b/README.md
+index 8ee39b3..7402bc9 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,6 @@
+ # JL Aspect Works Brand Identity
+ 
+-Production vector-based brand package for **JL Aspect Works**.
++PNG brand graphics for **JL Aspect Works**.
+ 
+ ## Locked identity
+ 
+@@ -12,10 +12,15 @@ Production vector-based brand package for **JL Aspect Works**.
+ 
+ ## Contents
+ 
+-- SVG and PNG corporate logos
+-- Multi-size corporate icon exports
+-- JL Mixing Studio and JL Mixing Automation lockups
+-- GitHub organization and repository graphics
+-- Brand guide and asset inventory
++- Company logo PNGs (`company-logo-light.png` and the existing `compay-logo-dark.png` filename)
++- Dark/light icon PNGs and exports
++- JL Mixing Studio and JL Mixing Automation product PNGs
++- Listening cover PNG
+ 
+-All assets include deliberate safe margins and are exported from SVG masters.
++SVG masters and a brand guide are not currently committed here. The existing dark-logo filename is preserved for consumers.
++
++## Validation and governance
++
++The [repository checks](.github/workflows/repository-checks.yml) validate PNG/SVG integrity, local Markdown links, and immutable Action references on every pull request and main push. They do not review visual design or grant asset usage rights. Changes use focused branches and PRs under the [standing development agreement](https://github.com/jl-aspect-works/engineering/blob/main/docs/DEVELOPMENT_AGREEMENT.md).
++
++The branch-protection verification record and proposed ruleset are maintained in [Engineering governance](https://github.com/jl-aspect-works/engineering/blob/main/docs/GITHUB_GOVERNANCE.md).
