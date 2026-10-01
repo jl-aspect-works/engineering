@@ -8,9 +8,9 @@ Verification date: 2026-09-30 (America/New_York). Scope: Engineering issues #16�
 | --- | --- | --- | --- |
 | `jl-mixing-studio` | Active ruleset 19107489; PRs required; deletion/non-fast-forward blocked; no bypass actors | `Required CI`, strict; GitHub Actions integration 15368 | Active ruleset 24244082; `refs/tags/v*` creation permitted, update/deletion/non-fast-forward blocked; no bypass actors |
 | `jl-mixing-automation` | Active ruleset 24118548; PRs required; deletion/non-fast-forward blocked; no bypass actors | `Required tests` and `Required ShellCheck`, strict; integration 15368 | Active ruleset 24244138; same immutable `v*` restrictions and no bypass actors |
-| `engineering` | Active ruleset 24118688; PRs required; deletion/non-fast-forward blocked; no bypass actors | No required check contexts in the current ruleset; new repository checks proposed in this remediation | No release tag ruleset needed for this documentation repository |
-| `jl-brand` | No rulesets returned by GitHub at verification | New `Required repository checks` workflow proposed | No product releases |
-| organization `.github` | No rulesets returned by GitHub at verification | New `Required repository checks` workflow proposed | No product releases |
+| `engineering` | Active ruleset 24118688; PRs required; deletion/non-fast-forward blocked; no bypass actors | No required check contexts in the current ruleset; `Required repository checks` now passes on main and awaits required-context configuration | No release tag ruleset needed for this documentation repository |
+| `jl-brand` | No rulesets returned by GitHub at verification | `Required repository checks` merged; administrator enforcement pending | No product releases |
+| organization `.github` | No rulesets returned by GitHub at verification | `Required repository checks` merged; administrator enforcement pending | No product releases |
 
 The new lightweight check validates PNG chunk checksums/structure, SVG syntax, local Markdown link targets, and immutable Action references. Negative fixtures exercise corrupt/truncated PNGs, missing local targets, and mutable Action references. It runs on every PR targeting main and every main push, without documentation-only path skips. Image checks validate structure, not visual design or a complete image-decoder security audit.
 
@@ -40,7 +40,7 @@ gh api --method POST repos/jl-aspect-works/.github/rulesets --input docs/securit
 
 Engineering already has a ruleset. After its new checks pass on main, add `Required repository checks` to ruleset 24118688 without replacing its other restrictions. Do not blindly POST duplicate rulesets or overwrite a changed ruleset. Re-read each resulting ruleset and verify active enforcement, default-branch target, strict checks, integration 15368, no bypasses, blocked deletion/non-fast-forward, and required PRs. Also review any additional rulesets and legacy branch protections for overlapping effects.
 
-**Pending administrator action:** the current connection can read public rulesets and change repository files/PRs, but exposes no settings-write operations. The workspace GitHub CLI is installed but unauthenticated. These configuration files are proposals, not evidence of active protection. The organization GitHub App installation 147188566 selects only Studio, Automation, and Engineering; writes to `jl-brand` and organization `.github` were rejected with HTTP 403, `Resource not accessible by integration`. Add those two repositories to the existing installation before attempting their PRs again.
+**Pending administrator action:** the current connection can read public rulesets and change repository files/PRs, but exposes no settings-write operations. The workspace GitHub CLI is installed but unauthenticated. The ruleset JSON is a proposal, not evidence of active protection. The owner expanded the GitHub App installation to include `jl-brand` and `.github`; repository content access was verified and both implementation PRs merged. No administrator settings were changed by the assistant.
 
 ## Security/account settings still requiring verification
 
@@ -49,7 +49,7 @@ Engineering already has a ruleset. After its new checks pass on main, add `Requi
 | Organization 2FA requirement | Unverified; organization settings are not exposed by the current connection | Inspect organization authentication-security settings and membership consequences before changing enforcement. Record whether 2FA is required. |
 | Secret scanning and push protection | Unverified; repository metadata did not expose `security_and_analysis`. Omission is not evidence of enabled or disabled status. | Inspect Code security settings for all five repositories. Enable available scanning/protection where needed; record unsupported features or plan constraints separately. Never place found secrets in the audit record. |
 | Dependabot alerts / dependency graph | Weekly version-update configuration verified for Studio Actions/npm/Cargo and Automation Actions/pip. Alert and dependency-graph settings remain unverified. | Confirm dependency graph and Dependabot alerts for applicable repositories; empty asset/config repositories may have no dependency graph to populate. Version-update YAML alone does not prove alerts are enabled. |
-| Private vulnerability reporting | Product/Engineering policies are present; the shared fallback policy is proposed in #17. The reporting setting remains unverified. | Confirm the private reporting setting independently for every repository. Policy file presence does not enable it. |
+| Private vulnerability reporting | Product/Engineering policies are present; the shared fallback policy was merged in #17. The reporting setting remains unverified. | Confirm the private reporting setting independently for every repository. Policy file presence does not enable it. |
 | Native release immutability | Both current `v2.3.3` releases report `immutable: false`. Protected tags and #14 create-only release workflows are verified; server-side immutability configuration is unverified. | Review the immutable-releases setting and its effect on future publication. Do not republish or replace existing artifacts/tags to retrofit protection. Record any native locking decision and preserve the workflow's draft upload-before-publication lifecycle. |
 | Signing / notarization | Explicitly deferred | Remains deferred unless separately reprioritized; this remediation does not add signing credentials or change release qualification. |
 
@@ -63,11 +63,21 @@ Use an authenticated administrator session to verify settings. Record observed v
 
 PR/issue records carry exact merge commits and CI results. Do not describe #16 or #18 as complete until their administrator-dependent work is verified.
 
-## Prepared implementation checkpoints
+## Merged implementation and manual completion
 
-The following reviewed local implementations are retained here until GitHub App access to their target repositories is available:
+- Engineering [PR #19](https://github.com/jl-aspect-works/engineering/pull/19), merge `2e92603fc86eecddf6e0f98e1a591e376a9b9e80`: governance record, concrete ruleset, and repository checks. PR and main checks passed.
+- Brand [PR #2](https://github.com/jl-aspect-works/jl-brand/pull/2), merge `3698b2981329b7fc1149457e36eae9a458e11b00`: repository checks and accurate asset inventory. PR and main checks passed.
+- Organization [PR #4](https://github.com/jl-aspect-works/.github/pull/4), merge `a0d54b0a6cb0ec05612716dfcec04fa01e5c1a36`: community defaults, profile corrections, and repository checks. PR and main checks passed.
 
-- [jl-brand patch](security/prepared/jl-brand.patch), based on `538446cdcea388fe06c85722504065e12549fba4`
-- [Organization .github patch](security/prepared/org-github.patch), based on `8031318900c2c25f376d538b8105dbc8a2b23fe0`
+Temporary implementation patches have been removed because the target PRs are now authoritative. User pre-approval covered these implementations and merges. #17 is complete; #16 and #18 remain open pending administrator settings and verification.
 
-Both add always-present repository checks with negative fixtures; the organization patch also adds default security/contribution guidance, bug/feature/PR templates, and corrected README/profile content. Local checkers, negative tests, workflow/template YAML parsing, and whitespace checks passed. No target PR was created because integration writes were rejected. Apply only on focused branches after reviewing the target's current main; if it has moved, reconcile changes rather than assuming these bases remain current. GitHub CI must pass before merge. User pre-approval of #16–18 and their associated PRs is recorded in the issue discussions. These patch files are implementation checkpoints, not active configuration or a second long-term source of truth. Remove them after the target PRs land, retaining the PR references.
+### Manual settings checklist
+
+1. In both Brand and organization `.github`, open **Settings → Rules → Rulesets**. Import [lightweight-main.json](security/rulesets/lightweight-main.json), or create a branch ruleset targeting the default branch. Set enforcement to **Active**, leave the bypass list empty, restrict deletion and force pushes, require a pull request and resolved review conversations, dismiss stale approvals, and require **Required repository checks** with expected source **GitHub Actions**. Require the branch to be up to date. Leave mandatory approving reviews at **0** until a second eligible reviewer is available. Inspect and edit any existing ruleset instead of creating duplicates.
+2. In Engineering, edit existing main ruleset **24118688** and add **Required repository checks** from **GitHub Actions**, with up-to-date branches required. Preserve its existing protections and empty bypass list.
+3. In organization **Settings → Security → Authentication security**, inspect the 2FA requirement. If disabled, review the affected membership/access list and coordinate any necessary account upgrades before enabling it. Record the resulting state. Do not infer compliance from an owner's own 2FA setting.
+4. In each of the five audited repositories, open **Settings → Security → Advanced Security** (some interfaces label this **Code security and analysis**). Verify and enable, where available, dependency graph, Dependabot alerts, secret scanning/Secret Protection, repository push protection, and private vulnerability reporting. Record each feature's enabled/disabled/unavailable state. Do not purchase paid protection implicitly. No automatic CodeQL setup changes are needed for the product repositories because their existing advanced workflows are already configured.
+5. In organization code-security configurations, inspect whether the same available protections are defaults for new repositories. Apply a suitable free/available baseline if needed, without replacing the product CodeQL workflows or enabling paid features implicitly. Record inheritance and any exceptions.
+6. Review native immutable-release settings for Studio and Automation separately as defense in depth. Existing `v2.3.3` releases reported `immutable: false`; do not replace artifacts or move tags to retrofit them. Keep this review separate from the already completed #14 workflow guard.
+
+After saving, report the final feature states and any unavailable controls in #18. Public rulesets can be read back by the assistant to finish #16 verification. Signing/notarization remains deferred.
